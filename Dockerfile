@@ -41,16 +41,16 @@ RUN npm ci --only=production
 # Switch to non-root user
 USER appuser
 
-# Health check
+# Set default port (Cloud Run will override this)
+ENV PORT=8000
+
+# Expose port (documentation only)
+EXPOSE 8000
+
+# Health check using the PORT variable
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
-
-# Set default port
-ENV PORT=3000
-
-# Expose port
-EXPOSE 3000
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT} || exit 1
 
 # For production build, serve the static files using PORT environment variable
-CMD sh -c "if [ -d './build' ]; then serve -s build -l $PORT; elif [ -d './dist' ]; then serve -s dist -l $PORT; else PORT=$PORT npm start; fi"
+CMD ["sh", "-c", "if [ -d './build' ]; then serve -s build -l ${PORT:-8000}; elif [ -d './dist' ]; then serve -s dist -l ${PORT:-8000}; else PORT=${PORT:-8000} npm start; fi"]
 
