@@ -19,38 +19,37 @@ RUN npm run build || npm run build:prod || npx react-scripts build || echo "Buil
 # Production stage
 FROM node:18-alpine
 
-# Install serve for production
-RUN npm install -g serve
-
 # Create non-root user
 RUN adduser -D -u 1000 appuser
 
 # Set working directory
 WORKDIR /app
 
+# Copy package files first
+COPY --from=builder --chown=appuser:appuser /app/package*.json ./
+
+# Install express and compression for production server
+RUN npm install express compression
+
 # Copy built application from builder
 COPY --from=builder --chown=appuser:appuser /app/build ./build 2>/dev/null || true
 COPY --from=builder --chown=appuser:appuser /app/dist ./dist 2>/dev/null || true
 COPY --from=builder --chown=appuser:appuser /app/public ./public
 COPY --from=builder --chown=appuser:appuser /app/src ./src
-COPY --from=builder --chown=appuser:appuser /app/package*.json ./
 
-# Install production dependencies
-RUN npm ci --only=production
+# Copy server file
+COPY --chown=appuser:appuser server.js ./
 
 # Switch to non-root user
 USER appuser
 
 # Set default port (Cloud Run will override this)
 ENV PORT=8000
+ENV NODE_ENV=production
 
 # Expose port (documentation only)
 EXPOSE 8000
 
-# Health check using the PORT variable
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT} || exit 1
-
-# For production build, serve the static files using PORT environment variable
-CMD ["sh", "-c", "if [ -d './build' ]; then serve -s build -l ${PORT:-8000}; elif [ -d './dist' ]; then serve -s dist -l ${PORT:-8000}; else PORT=${PORT:-8000} npm start; fi"]
+# Run the Express server
+CMD ["node", "server.js"]
 
