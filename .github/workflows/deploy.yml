@@ -1,0 +1,107 @@
+name: Deploy Frontend to GCP
+
+on:
+  push:
+    branches: [main]  # Only deploy from main branch
+  workflow_dispatch:    # Allow manual deployment
+
+env:
+  GCP_PROJECT: mychef-467404
+  GCP_REGION: us-central1
+  SERVICE_NAME: chefoodai-frontend
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/mychef-467404/chefoodai
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production  # Optional: requires approval for production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.GCP_PROJECT }}
+      
+      - name: Get Backend and AI Service URLs
+        id: get-service-urls
+        run: |
+          BACKEND_URL=$(gcloud run services describe chefoodai-backend \
+            --region ${{ env.GCP_REGION }} \
+            --format 'value(status.url)')
+          AI_URL=$(gcloud run services describe chefoodai-ai \
+            --region ${{ env.GCP_REGION }} \
+            --format 'value(status.url)')
+          
+          echo "BACKEND_URL=${BACKEND_URL}" >> $GITHUB_OUTPUT
+          echo "AI_URL=${AI_URL}" >> $GITHUB_OUTPUT
+          
+          echo "📡 Backend URL: ${BACKEND_URL}"
+          echo "🧠 AI Service URL: ${AI_URL}"
+      
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+      
+      - name: Build and Push Docker Image
+        run: |
+          VERSION="${{ github.sha }}"
+          
+          echo "🔨 Building Frontend Docker image..."
+          docker build -t ${{ env.ARTIFACT_REGISTRY }}/frontend:${VERSION} \
+                      -t ${{ env.ARTIFACT_REGISTRY }}/frontend:latest \
+                      --build-arg REACT_APP_API_URL=${{ steps.get-service-urls.outputs.BACKEND_URL }} \
+                      --build-arg REACT_APP_AI_URL=${{ steps.get-service-urls.outputs.AI_URL }} \
+                      --build-arg REACT_APP_ENV=production \
+                      --build-arg REACT_APP_VERSION=${VERSION} \
+                      .
+          
+          echo "📤 Pushing Frontend Docker image..."
+          docker push ${{ env.ARTIFACT_REGISTRY }}/frontend:${VERSION}
+          docker push ${{ env.ARTIFACT_REGISTRY }}/frontend:latest
+      
+      - name: Deploy to Cloud Run
+        run: |
+          echo "🚀 Deploying Frontend to Cloud Run..."
+          
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --min-instances 1 \
+            --max-instances 10 \
+            --cpu 1 \
+            --memory 512Mi \
+            --timeout 60 \
+            --set-env-vars "REACT_APP_ENV=production" \
+            --set-env-vars "REACT_APP_API_URL=${{ steps.get-service-urls.outputs.BACKEND_URL }}" \
+            --set-env-vars "REACT_APP_AI_URL=${{ steps.get-service-urls.outputs.AI_URL }}" \
+            --set-env-vars "REACT_APP_VERSION=${{ github.sha }}" \
+            --update-labels "service=frontend,environment=production"
+      
+      - name: Verify Deployment
+        run: |
+          echo "✅ Verifying deployment..."
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --format 'value(status.url)')
+          
+          echo "🔗 Service URL: ${SERVICE_URL}"
+          echo "🏥 Running health check..."
+          
+          sleep 10
+          curl -f ${SERVICE_URL} || exit 1
+          
+          echo "✅ Frontend deployed successfully!"
+          echo "📌 Version: ${{ github.sha }}"
+          echo "🔗 URL: ${SERVICE_URL}"
+          echo ""
+          echo "🎉 ChefoodAI is now live at: ${SERVICE_URL}"
