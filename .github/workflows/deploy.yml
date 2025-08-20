@@ -34,7 +34,7 @@ jobs:
           BACKEND_URL=$(gcloud run services describe chefoodai-backend \
             --region ${{ env.GCP_REGION }} \
             --format 'value(status.url)')
-          AI_URL=$(gcloud run services describe chefoodai-ai \
+          AI_URL=$(gcloud run services describe chefoodai-ai-service \
             --region ${{ env.GCP_REGION }} \
             --format 'value(status.url)')
           
