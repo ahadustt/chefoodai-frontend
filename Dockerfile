@@ -45,9 +45,12 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
+# Set default port
+ENV PORT=3000
+
 # Expose port
 EXPOSE 3000
 
-# For production build, serve the static files
-CMD ["sh", "-c", "if [ -d './build' ]; then serve -s build -l 3000; elif [ -d './dist' ]; then serve -s dist -l 3000; else npm start; fi"]
+# For production build, serve the static files using PORT environment variable
+CMD sh -c "if [ -d './build' ]; then serve -s build -l $PORT; elif [ -d './dist' ]; then serve -s dist -l $PORT; else PORT=$PORT npm start; fi"
 
