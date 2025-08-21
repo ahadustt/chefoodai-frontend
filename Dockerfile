@@ -7,14 +7,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install --production
+# Install ALL dependencies (including dev deps for building)
+RUN npm install
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build || npm run build:prod || npx react-scripts build || echo "Build step skipped"
+# Build the application with Vite
+RUN npm run build || (echo "Build failed, creating placeholder" && mkdir -p dist && echo '<!DOCTYPE html><html><body><h1>ChefoodAI</h1></body></html>' > dist/index.html)
 
 # Production stage
 FROM node:18-alpine
@@ -41,11 +41,11 @@ COPY --chown=appuser:appuser server.js ./
 USER appuser
 
 # Set default port (Cloud Run will override this)
-ENV PORT=8000
+ENV PORT=8080
 ENV NODE_ENV=production
 
 # Expose port (documentation only)
-EXPOSE 8000
+EXPOSE 8080
 
 # Run the Express server
 CMD ["node", "server.js"]

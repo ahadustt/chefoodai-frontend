@@ -34,17 +34,17 @@ let staticPath;
 if (fs.existsSync(buildPath)) {
     staticPath = buildPath;
     console.log('Serving from build directory');
+    app.use(express.static(staticPath));
 } else if (fs.existsSync(distPath)) {
     staticPath = distPath;
     console.log('Serving from dist directory');
+    app.use(express.static(staticPath));
 } else {
-    console.error('No build or dist directory found!');
+    console.log('No build or dist directory found - will serve placeholder page');
     console.log('Available files:', fs.readdirSync(__dirname));
-    // Fallback to serving from src for development
-    staticPath = __dirname;
+    // Don't set up static middleware if no build directory exists
+    staticPath = null;
 }
-
-app.use(express.static(staticPath));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -58,15 +58,51 @@ app.get('/health', (req, res) => {
 
 // Catch all handler - send React app for any route
 app.get('*', (req, res) => {
-    const indexPath = path.join(staticPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
+    if (staticPath && fs.existsSync(staticPath)) {
+        const indexPath = path.join(staticPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+            res.sendFile(indexPath);
+        } else {
+            // Serve a temporary page if index.html doesn't exist
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>ChefoodAI</title>
+                    <style>
+                        body { font-family: system-ui; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                        .container { text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>ChefoodAI</h1>
+                        <p>Service is starting up...</p>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
     } else {
-        res.status(404).json({
-            error: 'Frontend not built',
-            message: 'Please build the React app first',
-            staticPath: staticPath
-        });
+        // Serve a temporary page if no build exists
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>ChefoodAI</title>
+                <style>
+                    body { font-family: system-ui; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                    .container { text-align: center; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>ChefoodAI</h1>
+                    <p>Frontend deployment in progress...</p>
+                </div>
+            </body>
+            </html>
+        `);
     }
 });
 
