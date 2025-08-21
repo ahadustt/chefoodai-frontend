@@ -8,7 +8,7 @@ import {
   Utensils,
   Star,
   Bookmark,
-  BookmarkCheck,
+  Check,
   Heart,
   Timer,
   MessageCircle,
@@ -1586,7 +1586,7 @@ Sign up free at ChefoodAI.com! 🚀`
               className="mb-6"
             >
               <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <BookmarkCheck className="h-4 w-4 mr-2 text-emerald-500" />
+                <Check className="h-4 w-4 mr-2 text-emerald-500" />
                 Recipe History
               </h3>
               <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200/50 rounded-xl p-4 space-y-3">
@@ -1672,7 +1672,7 @@ Sign up free at ChefoodAI.com! 🚀`
                 </>
               ) : isSaved ? (
                 <>
-                  <BookmarkCheck className="h-4 w-4 mr-2" />
+                  <Check className="h-4 w-4 mr-2" />
                   Remove from Saved
                 </>
               ) : (

@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { mealPlanningApi } from '../../services/mealPlanningApi';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bot, BookmarkCheck, Shuffle, CheckCircle, Repeat, Users, Target, Clock, ChefHat, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Bot, Check, Shuffle, CheckCircle, Repeat, Users, Target, Clock, ChefHat, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 // AI-powered personalized meal plan name generation
@@ -104,7 +104,7 @@ const RecipeSourceSelector: React.FC<{
           }`}
           onClick={() => onModeChange('saved')}
         >
-          <BookmarkCheck className={`w-8 h-8 mx-auto mb-3 ${
+          <Check className={`w-8 h-8 mx-auto mb-3 ${
             recipeMode === 'saved' ? 'text-green-600' : 'text-gray-400'
           }`} />
           <div className="text-base font-medium mb-2">Saved Favorites</div>
@@ -173,7 +173,7 @@ const RecipeSourceSelector: React.FC<{
               </span>
               <span className="font-medium text-purple-600">Balanced</span>
               <span className="flex items-center">
-                <BookmarkCheck className="w-3 h-3 mr-1" />
+                <Check className="w-3 h-3 mr-1" />
                 All Saved
               </span>
             </div>
@@ -231,7 +231,7 @@ const SavedRecipeBrowser: React.FC<{
     <div className="border border-gray-200 rounded-xl p-6 bg-gray-50">
       <div className="flex items-center justify-between mb-4">
         <h4 className="font-medium text-gray-900 flex items-center">
-          <BookmarkCheck className="w-4 h-4 mr-2 text-green-600" />
+          <Check className="w-4 h-4 mr-2 text-green-600" />
           Choose from Your Saved Recipes
         </h4>
         {maxSelections && (
@@ -261,7 +261,7 @@ const SavedRecipeBrowser: React.FC<{
         </div>
       ) : filteredRecipes.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          <BookmarkCheck className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+          <Check className="w-12 h-12 mx-auto mb-2 text-gray-300" />
           <div className="text-sm font-medium">No saved recipes found</div>
           <div className="text-xs mt-1">
             {searchTerm ? 'Try a different search term' : 'Save some recipes first to use them in meal planning'}

@@ -13,8 +13,8 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build the application with Vite
-RUN npm run build
+# Build the application with Vite (with verbose output for debugging)
+RUN npm run build || (echo "Build failed with exit code $?" && ls -la && npm ls && exit 1)
 
 # Production stage
 FROM node:18-alpine
