@@ -56,7 +56,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     try {
       // Get the API URL from environment or use the same default as API client
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://chefoodai-backend-1074761757006.us-central1.run.app';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://chefoodai-backend-mpsrniojta-uc.a.run.app';
       
       // Convert HTTP/HTTPS URL to WebSocket URL
       const url = new URL(apiUrl);
