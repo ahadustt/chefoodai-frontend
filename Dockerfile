@@ -31,11 +31,8 @@ COPY --from=builder --chown=appuser:appuser /app/package*.json ./
 # Install express and compression for production server
 RUN npm install express compression
 
-# Copy built application from builder
-COPY --from=builder --chown=appuser:appuser /app/build ./build 2>/dev/null || true
-COPY --from=builder --chown=appuser:appuser /app/dist ./dist 2>/dev/null || true
-COPY --from=builder --chown=appuser:appuser /app/public ./public
-COPY --from=builder --chown=appuser:appuser /app/src ./src
+# Copy all application files from builder
+COPY --from=builder --chown=appuser:appuser /app ./
 
 # Copy server file
 COPY --chown=appuser:appuser server.js ./
