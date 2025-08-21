@@ -3,9 +3,14 @@
  * Serves the React build with proper Cloud Run configuration
  */
 
-const express = require('express');
-const path = require('path');
-const compression = require('compression');
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import compression from 'compression';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -24,7 +29,6 @@ const buildPath = path.join(__dirname, 'build');
 const distPath = path.join(__dirname, 'dist');
 
 // Check which build directory exists
-const fs = require('fs');
 let staticPath;
 
 if (fs.existsSync(buildPath)) {
