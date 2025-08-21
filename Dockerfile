@@ -19,8 +19,8 @@ RUN npm run build || npm run build:prod || npx react-scripts build || echo "Buil
 # Production stage
 FROM node:18-alpine
 
-# Create non-root user
-RUN adduser -D -u 1000 appuser
+# Create non-root user (check if exists first)
+RUN adduser -D -u 1000 appuser 2>/dev/null || true
 
 # Set working directory
 WORKDIR /app
