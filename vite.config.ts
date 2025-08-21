@@ -1,18 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
-      }
-    })
+    react()
   ],
   resolve: {
     alias: {
@@ -24,7 +17,7 @@ export default defineConfig({
     proxy: {
       // Proxy AI recipe generation to AI service
       '/api/v1/generate-recipe': {
-        target: 'https://chefoodai-ai-service-1074761757006.us-central1.run.app',
+        target: 'https://chefoodai-ai-service-mpsrniojta-uc.a.run.app',
         changeOrigin: true,
         secure: true,
         configure: (proxy, options) => {
@@ -38,7 +31,7 @@ export default defineConfig({
       },
       // Proxy all other API calls to main backend
       '/api': {
-        target: 'https://chefoodai-backend-1074761757006.us-central1.run.app',
+        target: 'https://chefoodai-backend-mpsrniojta-uc.a.run.app',
         changeOrigin: true,
         secure: true,
         configure: (proxy, options) => {
