@@ -38,24 +38,11 @@ try {
         console.log('No build or dist directory found - will serve placeholder page');
         console.log('Available files:', fs.readdirSync(__dirname));
     }
-    
-    // Only set up static middleware if we have a valid path
-    if (staticPath) {
-        app.use(express.static(staticPath, {
-            index: 'index.html',
-            maxAge: '1d',
-            setHeaders: (res, path) => {
-                if (path.endsWith('.html')) {
-                    res.setHeader('Cache-Control', 'no-cache');
-                }
-            }
-        }));
-    }
 } catch (error) {
-    console.error('Error setting up static files:', error);
+    console.error('Error checking directories:', error);
 }
 
-// Health check endpoint
+// Health check endpoint - define this FIRST
 app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',
@@ -65,86 +52,82 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Root route
-app.get('/', (req, res) => {
-    handleRequest(req, res);
+// Ready check endpoint
+app.get('/ready', (req, res) => {
+    res.json({
+        status: 'ready',
+        service: 'frontend',
+        staticPath: staticPath || 'none',
+        timestamp: new Date().toISOString()
+    });
 });
 
-// Catch all handler - send React app for any route
-app.get('/*', (req, res) => {
-    handleRequest(req, res);
-});
+// Serve static files if available
+if (staticPath) {
+    app.use(express.static(staticPath));
+}
 
-function handleRequest(req, res) {
+// Default handler for all routes - using middleware instead of wildcard route
+app.use((req, res) => {
     if (staticPath && fs.existsSync(staticPath)) {
         const indexPath = path.join(staticPath, 'index.html');
         if (fs.existsSync(indexPath)) {
             res.sendFile(indexPath);
         } else {
-            // Serve a temporary page if index.html doesn't exist
-            res.send(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>ChefoodAI</title>
-                    <style>
-                        body { font-family: system-ui; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-                        .container { text-align: center; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <h1>ChefoodAI</h1>
-                        <p>Service is starting up...</p>
-                    </div>
-                </body>
-                </html>
-            `);
+            res.send(getPlaceholderHTML('Service is starting up...'));
         }
     } else {
-        // Serve a temporary page if no build exists
-        res.send(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>ChefoodAI</title>
-                <style>
-                    body { font-family: system-ui; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-                    .container { text-align: center; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h1>ChefoodAI</h1>
-                    <p>Frontend deployment in progress...</p>
-                </div>
-            </body>
-            </html>
-        `);
+        res.send(getPlaceholderHTML('Frontend deployment in progress...'));
     }
+});
+
+// Helper function for placeholder HTML
+function getPlaceholderHTML(message) {
+    return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>ChefoodAI</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+                    display: flex; 
+                    justify-content: center; 
+                    align-items: center; 
+                    height: 100vh; 
+                    margin: 0;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                }
+                .container { 
+                    text-align: center;
+                    background: white;
+                    padding: 3rem;
+                    border-radius: 10px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                }
+                h1 {
+                    color: #333;
+                    margin-bottom: 1rem;
+                }
+                p {
+                    color: #666;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🍳 ChefoodAI</h1>
+                <p>${message}</p>
+            </div>
+        </body>
+        </html>
+    `;
 }
 
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Server error:', err);
-    res.status(500).send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>ChefoodAI - Error</title>
-            <style>
-                body { font-family: system-ui; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-                .container { text-align: center; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>ChefoodAI</h1>
-                <p>An error occurred. Please try again later.</p>
-            </div>
-        </body>
-        </html>
-    `);
+    res.status(500).send(getPlaceholderHTML('An error occurred. Please try again later.'));
 });
 
 // Start server
@@ -164,10 +147,14 @@ process.on('SIGTERM', () => {
 // Handle uncaught errors
 process.on('uncaughtException', (err) => {
     console.error('Uncaught exception:', err);
-    // Keep the server running
+    // Try to stay alive for health checks
+    if (err.message && err.message.includes('path-to-regexp')) {
+        console.log('Ignoring path-to-regexp error');
+        return;
+    }
+    process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled rejection at:', promise, 'reason:', reason);
-    // Keep the server running
 });
