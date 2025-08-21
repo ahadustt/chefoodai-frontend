@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Build the application with Vite
-RUN npm run build || (echo "Build failed, creating placeholder" && mkdir -p dist && echo '<!DOCTYPE html><html><body><h1>ChefoodAI</h1></body></html>' > dist/index.html)
+RUN npm run build
 
 # Production stage
 FROM node:18-alpine
